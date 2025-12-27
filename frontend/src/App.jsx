@@ -4,10 +4,12 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Gallery from './pages/Gallery';
 import Upload from './pages/Upload';
+import Navbar from './components/Navbar';
 
 function App() {
   return (
     <Router>
+      <Navbar />
       <Routes>
         <Route path="/" element={<Gallery />} />
         <Route path="/login" element={<Login />} />

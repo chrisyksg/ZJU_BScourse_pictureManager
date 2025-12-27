@@ -1,8 +1,16 @@
 // backend/utils/imageProcessor.js
 const sharp = require('sharp');
 const exifr = require('exifr');
+const fs = require('fs');
 const path = require('path');
 
+const dirs = ['uploads/original', 'uploads/thumbnails'];
+dirs.forEach(dir => {
+  if (!fs.existsSync(dir)){
+    fs.mkdirSync(dir, { recursive: true });
+    console.log(`📁 已自动创建目录: ${dir}`);
+  }
+});
 exports.processImage = async (file) => {
   const originalPath = file.path;
   const thumbName = 'thumb-' + file.filename;
