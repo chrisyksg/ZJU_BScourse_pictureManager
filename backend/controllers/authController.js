@@ -6,6 +6,10 @@ const jwt = require('jsonwebtoken');
 exports.register = async (req, res) => {
   try {
     const { username, email, password } = req.body;
+    //  新增：非空校验
+    if (!username || !email || !password) {
+      return res.status(400).json({ message: "所有字段（用户名、邮箱、密码）均为必填" });
+    }
 
     // 1. 验证基本格式 (对应作业要求：6字节以上)
     if (username.length < 6 || password.length < 6) {
@@ -40,35 +44,43 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    // 1. 从请求体获取 email 和 password
+    const { email, password } = req.body;
 
-    // 1. 查找用户是否存在
-    const [users] = await db.execute('SELECT * FROM users WHERE username = ?', [username]);
+    if (!email || !password) {
+      return res.status(400).json({ message: "请提供邮箱和密码" });
+    }
+
+    // 2. 根据 email 查找用户
+    const [users] = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
+    
     if (users.length === 0) {
-      return res.status(401).json({ message: "用户名或密码错误" });
+      // 为了安全，通常提示“用户名或密码错误”，不具体说明是邮箱错了还是密码错了
+      return res.status(401).json({ message: "邮箱或密码错误" });
     }
 
     const user = users[0];
 
-    // 2. 验证密码（将输入的明文密码与数据库的哈希值对比）
+    // 3. 验证密码
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
-      return res.status(401).json({ message: "用户名或密码错误" });
+      return res.status(401).json({ message: "邮箱或密码错误" });
     }
 
-    // 3. 生成 JWT Token (有效期 24 小时)
+    // 4. 生成 JWT Token
     const token = jwt.sign(
-      { userId: user.id, username: user.username },
+      { userId: user.id, username: user.username }, // Token 里可以保留 username 方便前端显示
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
 
     res.json({
       message: "登录成功",
-      token, // 以后前端访问“上传图片”等接口，必须在 Header 里带上这个
-      user: { id: user.id, username: user.username }
+      token,
+      user: { id: user.id, username: user.username, email: user.email }
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "服务器内部错误" });
   }
 };

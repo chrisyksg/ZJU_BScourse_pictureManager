@@ -1,0 +1,1 @@
+export default function Gallery() { return <div>图片库首页</div> }

@@ -1,0 +1,1 @@
+export default function Upload() { return <div>上传页</div> }
