@@ -1,7 +1,8 @@
 // src/pages/Login.jsx
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios'; // 引入你配置好的 axios 实例
+import { AuthContext } from '../context/AuthContext';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -9,6 +10,7 @@ const Login = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
     const navigate = useNavigate();
+    const { login } = useContext(AuthContext); // 引入 Context 方法
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -19,8 +21,8 @@ const Login = () => {
             
             // 登录成功处理 
             setSuccess(true);
-            localStorage.setItem('token', response.data.token); // 保存通行证
-            
+            //localStorage.setItem('token', response.data.token); // 保存通行证
+            login(response.data.user, response.data.token); // 使用 Context 的 login 而不是简单的 localStorage navigate('/');
             // 延迟跳转到首页/上传页 [cite: 402]
             setTimeout(() => {
                 navigate('/'); 
