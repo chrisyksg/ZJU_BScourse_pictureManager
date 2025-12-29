@@ -52,6 +52,33 @@ exports.uploadImage = async (req, res) => {
         privacy || 'private'
       ]
     );
+    const imageId = result.insertId;
+    // --- 自动标签逻辑---
+    const autoTags = [];
+    if (exif?.Make) autoTags.push(exif.Make); // 品牌，如 Apple
+    if (exif?.Model) autoTags.push(exif.Model); // 型号，如 iPhone 13
+    if (width > 3000) autoTags.push("高清");
+    if (capturedAt) {
+        const month = new Date(capturedAt).getMonth() + 1;
+        if (month >= 3 && month <= 5) autoTags.push("春天");
+        if (month >= 6 && month <= 8) autoTags.push("夏天");
+        if (month >= 9 && month <= 11) autoTags.push("秋天");
+        if (month === 12 || month <= 2) autoTags.push("冬天");
+    }
+
+    // 循环将这些自动生成的标签存入数据库
+    for (const tName of autoTags) {
+        // 逻辑同 addTag：先查 tag_id，再插 image_tags
+        let [tRow] = await db.execute('SELECT id FROM tags WHERE name = ?', [tName]);
+        let tId;
+        if (tRow.length === 0) {
+            const [newT] = await db.execute('INSERT INTO tags (name) VALUES (?)', [tName]);
+            tId = newT.insertId;
+        } else {
+            tId = tRow[0].id;
+        }
+        await db.execute('INSERT INTO image_tags (image_id, tag_id) VALUES (?, ?)', [imageId, tId]);
+    }
 
     res.status(201).json({
       message: "图片上传并处理成功！",

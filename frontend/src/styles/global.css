@@ -584,3 +584,112 @@ footer {
     margin-bottom: 20px;
     display: none;
 }
+/* Gallery 页面整体布局 */
+.gallery-page {
+    background: #f8f9fa;
+    min-height: 100vh;
+}
+
+/* 搜索框美化 */
+.search-header {
+    padding: 30px 5%;
+    display: flex;
+    justify-content: center;
+}
+.search-bar-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border-radius: 30px;
+}
+.search-bar-wrapper input {
+    width: 100%;
+    padding: 15px 25px 15px 55px;
+    border-radius: 30px;
+    border: 1px solid #eee;
+    font-size: 16px;
+    outline: none;
+    transition: 0.3s;
+}
+.search-bar-wrapper .search-icon {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--primary);
+}
+
+/* 顶部轮播样式 */
+.featured-carousel {
+    margin: 0 5% 40px;
+    height: 450px;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+.carousel-item {
+    position: relative;
+    height: 450px;
+    background: #000;
+}
+.carousel-img-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.8;
+}
+.carousel-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 40px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.8));
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+.desc-text {
+    max-width: 300px;
+    font-size: 14px;
+    background: rgba(255,255,255,0.1);
+    padding: 10px;
+    border-radius: 8px;
+    backdrop-filter: blur(5px);
+}
+
+/* 按月分组列表 */
+.gallery-main { padding: 0 5% 50px; }
+.month-section { margin-bottom: 40px; }
+.month-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    border-left: 4px solid var(--primary);
+    padding-left: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.month-title .count { font-size: 14px; color: #888; font-weight: normal; }
+
+.photo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+}
+.photo-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: 0.3s;
+    cursor: pointer;
+}
+.photo-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+.img-box { height: 180px; overflow: hidden; }
+.img-box img { width: 100%; height: 100%; object-fit: cover; }
+.photo-info { padding: 12px; }
+.photo-info h4 { margin-bottom: 5px; font-size: 15px; }
+.time-tag { font-size: 12px; color: #999; }
