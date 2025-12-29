@@ -134,24 +134,51 @@ exports.deleteImage = async (req, res) => {
 };
 
 // 添加人工标签
-exports.addTags = async (req, res) => {
+exports.addTag = async (req, res) => {
+  const { id } = req.params; // image_id
+  const { tagName } = req.body;
+
+  if (!tagName) return res.status(400).json({ message: "标签内容不能为空" });
+
   try {
-    const { imageId, tags } = req.body; // tags 是个数组，如 ["风景", "杭州"]
-    
-    for (const tagName of tags) {
-      // 1. 插入或忽略标签名到 tags 表
-      await db.execute('INSERT IGNORE INTO tags (name, type) VALUES (?, ?)', [tagName, 'manual']);
-      
-      // 2. 获取标签 ID
-      const [tagRows] = await db.execute('SELECT id FROM tags WHERE name = ?', [tagName]);
-      const tagId = tagRows[0].id;
-      
-      // 3. 关联图片和标签
-      await db.execute('INSERT IGNORE INTO image_tags (image_id, tag_id) VALUES (?, ?)', [imageId, tagId]);
+    // 1. 检查标签是否已存在于 tags 表
+    let [tag] = await db.execute('SELECT id FROM tags WHERE name = ?', [tagName]);
+    let tagId;
+
+    if (tag.length === 0) {
+      // 不存在则新建
+      const [newTag] = await db.execute('INSERT INTO tags (name) VALUES (?)', [tagName]);
+      tagId = newTag.insertId;
+    } else {
+      tagId = tag[0].id;
     }
-    
-    res.json({ message: "标签添加成功" });
+
+    // 2. 检查是否已经关联过（防止重复标签）
+    const [existingRelation] = await db.execute(
+      'SELECT * FROM image_tags WHERE image_id = ? AND tag_id = ?', 
+      [id, tagId]
+    );
+
+    if (existingRelation.length === 0) {
+      await db.execute('INSERT INTO image_tags (image_id, tag_id) VALUES (?, ?)', [id, tagId]);
+    }
+
+    res.json({ message: "标签添加成功", tagName });
   } catch (error) {
     res.status(500).json({ message: "添加标签失败", error: error.message });
+  }
+};
+// 获取单张图片的标签
+exports.getImageTags = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [tags] = await db.execute(
+      `SELECT t.name FROM tags t 
+       JOIN image_tags it ON t.id = it.tag_id 
+       WHERE it.image_id = ?`, [id]
+    );
+    res.json(tags);
+  } catch (error) {
+    res.status(500).json({ message: "获取标签失败" });
   }
 };

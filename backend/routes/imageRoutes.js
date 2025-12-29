@@ -12,6 +12,7 @@ router.post('/upload', verifyToken, upload.single('image'), imageController.uplo
 // 删除图片（DELETE）
 router.delete('/:id', verifyToken, imageController.deleteImage);
 // 人工添加标签（POST）
-router.post('/tags', verifyToken, imageController.addTags);
-
+router.post('/:id/tags', verifyToken, imageController.addTag);
+// 获取图片标签（GET）
+router.get('/:id/tags', verifyToken, imageController.getImageTags);
 module.exports = router;
