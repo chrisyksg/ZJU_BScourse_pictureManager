@@ -15,4 +15,6 @@ router.delete('/:id', verifyToken, imageController.deleteImage);
 router.post('/:id/tags', verifyToken, imageController.addTag);
 // 获取图片标签（GET）
 router.get('/:id/tags', verifyToken, imageController.getImageTags);
+// 处理图片编辑接口（POST）
+router.post('/:id/edit', verifyToken, upload.single('image'), imageController.editImage);
 module.exports = router;

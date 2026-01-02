@@ -3,6 +3,7 @@ const db = require('../config/db');
 const { processImage } = require('../utils/imageProcessor');
 const fs = require('fs').promises;
 const path = require('path');
+const sharp = require('sharp');
 
 // 图片上传处理
 exports.uploadImage = async (req, res) => {
@@ -208,4 +209,78 @@ exports.getImageTags = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: "获取标签失败" });
   }
+};
+
+// 编辑图片信息及替换图片文件
+exports.editImage = async (req, res) => {
+    // 1. 获取基础数据
+    const imageId = req.params.id;
+    const userId = req.user ? req.user.userId : null; // 检查 user 对象是否存在
+    const newFile = req.file;
+
+    if (!newFile || !userId || !imageId) {
+        return res.status(400).json({ 
+            message: "请求参数不全", 
+            debug: { imageId, userId, hasFile: !!newFile } 
+        });
+    }
+
+    try {
+        // 2. 校验权限与存在性
+        const [rows] = await db.execute(
+            'SELECT file_path, thumbnail_path FROM images WHERE id = ? AND user_id = ?',
+            [imageId, userId]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({ message: "未找到图片或无权编辑" });
+        }
+
+        const oldImagePath = path.join(__dirname, '..', rows[0].file_path);
+        const oldThumbPath = path.join(__dirname, '..', rows[0].thumbnail_path);
+
+        // 3. 处理路径
+        const newFilePath = newFile.path.replace(/\\/g, '/');
+        const newThumbName = 'thumb-' + newFile.filename;
+        const newThumbPath = path.join('uploads/thumbnails', newThumbName).replace(/\\/g, '/');
+
+        // 4. 使用 Sharp 处理缩略图并获取新尺寸
+        // 确保 Sharp 处理完成后再继续
+        await sharp(newFile.path)
+            .resize(300, 300, { fit: 'cover' })
+            .toFile(path.join(__dirname, '..', newThumbPath));
+
+        const imageInfo = await sharp(newFile.path).metadata();
+
+        // 5. 准备数据库参数（核心防御：确保没有任何值是 undefined）
+        const updateParams = [
+            newFilePath || null,
+            newThumbPath || null,
+            imageInfo.width || 0,
+            imageInfo.height || 0,
+            newFile.size || 0,
+            imageId,
+            userId
+        ];
+
+        // 6. 执行更新
+        await db.execute(
+            `UPDATE images 
+             SET file_path = ?, thumbnail_path = ?, width = ?, height = ?, file_size = ? 
+             WHERE id = ? AND user_id = ?`,
+            updateParams
+        );
+
+        // 7. 清理旧文件
+        try {
+            if (fs.existsSync(oldImagePath)) fs.unlinkSync(oldImagePath);
+            if (fs.existsSync(oldThumbPath)) fs.unlinkSync(oldThumbPath);
+        } catch (e) { console.log("清理旧文件跳过:", e.message); }
+
+        res.json({ message: "编辑成功", file_path: newFilePath });
+
+    } catch (error) {
+        console.error("editImage 内部错误:", error);
+        res.status(500).json({ message: "后端处理失败" });
+    }
 };

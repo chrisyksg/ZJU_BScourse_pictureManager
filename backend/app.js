@@ -11,7 +11,11 @@ const app = express();
 app.use(cors()); // 允许前端 React 访问
 app.use(express.json()); // 允许解析 JSON 格式的请求体
 app.use('/api/images', imageRoutes); // 图片相关路由
-app.use('/uploads', express.static('uploads')); // 静态文件服务
+app.use('/uploads', express.static('uploads', {
+  setHeaders: (res) => {
+  res.set('Acess-Control-Allow-Origin', '*'); 
+  }
+})); // 静态文件服务
 
 // 基础路由测试
 app.get('/', (req, res) => {
@@ -19,7 +23,7 @@ app.get('/', (req, res) => {
 });
 
 const authRoutes = require('./routes/authRoutes');
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authRoutes); // 用户认证路由
 
 // 启动服务器
 const PORT = process.env.PORT || 3000;
