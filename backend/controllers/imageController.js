@@ -4,6 +4,7 @@ const { processImage } = require('../utils/imageProcessor');
 const fs = require('fs').promises;
 const path = require('path');
 const sharp = require('sharp');
+const { analyzeImage } = require('../services/aiService');
 
 // 图片上传处理
 exports.uploadImage = async (req, res) => {
@@ -278,9 +279,72 @@ exports.editImage = async (req, res) => {
         } catch (e) { console.log("清理旧文件跳过:", e.message); }
 
         res.json({ message: "编辑成功", file_path: newFilePath });
+        // 在后台启动 AI 分析 (不使用 await，因为不让用户等)
+        // setImmediate(async () => {
+        //     try {
+        //         console.log("AI 正在分析图片...");
+        //         const fullPath = path.join(__dirname, '..', newFilePath);
+        //         const tags = await analyzeImage(fullPath);
+
+        //         if (tags && tags.length > 0) {
+        //             for (const tagName of tags) {
+        //                 // 自动存入标签表并建立关联
+        //                 await db.execute('INSERT IGNORE INTO tags (name, type) VALUES (?, "auto")', [tagName]);
+        //                 const [tagRows] = await db.execute('SELECT id FROM tags WHERE name = ?', [tagName]);
+        //                 const tagId = tagRows[0].id;
+        //                 await db.execute('INSERT IGNORE INTO image_tags (image_id, tag_id) VALUES (?, ?)', [imageId, tagId]);
+        //             }
+        //             console.log("AI 自动打标签成功:", tags);
+        //         }
+        //     } catch (err) {
+        //         console.error("后台 AI 处理失败:", err);
+        //     }
+        // });
 
     } catch (error) {
         console.error("editImage 内部错误:", error);
         res.status(500).json({ message: "后端处理失败" });
+    }
+};
+
+exports.analyzeImageTags = async (req, res) => {
+    const imageId = req.params.id;
+    const userId = req.user.userId;
+
+    try {
+        // 1. 获取图片路径
+        const [rows] = await db.execute(
+            'SELECT file_path FROM images WHERE id = ? AND user_id = ?',
+            [imageId, userId]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({ message: "未找到图片" });
+        }
+
+        // 2. 调用 AI 分析（同步等待结果，因为这是用户主动发起的请求）
+        const fullPath = path.join(__dirname, '..', rows[0].file_path);
+        const tags = await analyzeImage(fullPath);
+
+        if (tags && tags.length > 0) {
+            for (const tagName of tags) {
+                // 插入标签并关联
+                await db.execute('INSERT IGNORE INTO tags (name, type) VALUES (?, "auto")', [tagName]);
+                const [tagRows] = await db.execute('SELECT id FROM tags WHERE name = ?', [tagName]);
+                const tagId = tagRows[0].id;
+                await db.execute('INSERT IGNORE INTO image_tags (image_id, tag_id) VALUES (?, ?)', [imageId, tagId]);
+            }
+            
+            return res.json({ 
+                message: "AI 标签生成成功", 
+                tags: tags 
+            });
+        } else {
+            return res.status(500).json({ message: "AI 未能识别出有效标签" });
+        }
+
+    } catch (error) {
+        console.error("AI 分析接口报错:", error);
+        res.status(500).json({ message: "服务器内部错误" });
     }
 };

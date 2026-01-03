@@ -17,4 +17,7 @@ router.post('/:id/tags', verifyToken, imageController.addTag);
 router.get('/:id/tags', verifyToken, imageController.getImageTags);
 // 处理图片编辑接口（POST）
 router.post('/:id/edit', verifyToken, upload.single('image'), imageController.editImage);
+// AI 分析图片获取标签（POST）
+router.post('/:id/analyze', verifyToken, imageController.analyzeImageTags);
+
 module.exports = router;
