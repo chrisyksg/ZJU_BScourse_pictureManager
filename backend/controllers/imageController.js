@@ -279,27 +279,6 @@ exports.editImage = async (req, res) => {
         } catch (e) { console.log("清理旧文件跳过:", e.message); }
 
         res.json({ message: "编辑成功", file_path: newFilePath });
-        // 在后台启动 AI 分析 (不使用 await，因为不让用户等)
-        // setImmediate(async () => {
-        //     try {
-        //         console.log("AI 正在分析图片...");
-        //         const fullPath = path.join(__dirname, '..', newFilePath);
-        //         const tags = await analyzeImage(fullPath);
-
-        //         if (tags && tags.length > 0) {
-        //             for (const tagName of tags) {
-        //                 // 自动存入标签表并建立关联
-        //                 await db.execute('INSERT IGNORE INTO tags (name, type) VALUES (?, "auto")', [tagName]);
-        //                 const [tagRows] = await db.execute('SELECT id FROM tags WHERE name = ?', [tagName]);
-        //                 const tagId = tagRows[0].id;
-        //                 await db.execute('INSERT IGNORE INTO image_tags (image_id, tag_id) VALUES (?, ?)', [imageId, tagId]);
-        //             }
-        //             console.log("AI 自动打标签成功:", tags);
-        //         }
-        //     } catch (err) {
-        //         console.error("后台 AI 处理失败:", err);
-        //     }
-        // });
 
     } catch (error) {
         console.error("editImage 内部错误:", error);
